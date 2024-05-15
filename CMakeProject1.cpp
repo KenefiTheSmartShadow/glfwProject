@@ -7,31 +7,39 @@ using namespace std;
 const int WIDTH = 800, HEIGHT = 600;
 
 float vertices[] = {
-    0.5f,  0.5f,  0.0f, // top right
-    0.5f,  -0.5f, 0.0f, // bottom right
-    -0.5f, -0.5f, 0.0f, // bottom left
-    -0.5f, 0.5f,  0.0f  // top left
+     // x,     y,    z
+      0.f, 0.5f, 0.0f, 1.f, 0.f, 0.f, // top
+     0.5f, -0.5f, 0.0f, 0.f, 1.f, 0.f, // bottom right
+    -0.5f, -0.5f, 0.0f, 0.f, 0.f, 1.f, // bottom left
+
+    //-.4f, .15f, 0.f, 0.f, 0.f, 1.f, // top
+    //-.2f, -.2f, 0.f, 0.f, 0.f, 0.f, // right
+    //-.6f, -.2f, 0.f, 1.f, 0.f, 0.f  // left
 };
 unsigned int indices[] = {
-    0, 1, 3, // first Triangle
-    1, 2, 3  // second Triangle
+    0, 1, 2, // first Triangle
+    //3, 4, 5 // second Triangle
 };
 
 const char *vertexShaderSource =
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+  "#version 330 core\n"
+  "layout (location = 0) in vec3 aPos;\n"
+  "layout (location = 1) in vec3 aCol;\n"
+  "out vec3 vertexColor;\n"
+  "void main()\n"
+  "{\n"
+  "   gl_Position = vec4(aPos, 1.0);\n"
+  "   vertexColor = aCol;\n"
+  "}\0";
 
 const char *fragmentShaderSource =
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, .5f, .2f, 1.f);\n"
-    "}\0";
+  "#version 330 core\n"
+  "out vec4 FragColor;\n"
+  "in vec3 vertexColor;\n"
+  "void main()\n"
+  "{\n"
+  "   FragColor = vec4(vertexColor, 1.0f);\n"
+  "}\0";
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void process_input(GLFWwindow *window);
@@ -129,8 +137,12 @@ int main()
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
                GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
+  // position attribute
+  glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*) 0);
+  glEnableVertexAttribArray (0);
+  // color attribute
+  glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*) (3 * sizeof (float)));
+  glEnableVertexAttribArray (1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0); 
@@ -138,12 +150,12 @@ int main()
   // -------
   // PROGRAM
   // -------
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glfwSwapInterval(1);
   while (!glfwWindowShouldClose(window)) {
     process_input(window);
 
-    glClearColor(0.1f, 1.f, 1.f, 1.f);
+    glClearColor(.1f, .1f, .1f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(shaderProgram);
