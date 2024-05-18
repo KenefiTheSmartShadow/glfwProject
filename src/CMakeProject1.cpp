@@ -66,6 +66,7 @@ int main()
   
   // load texture
   int width, height, nrChannels;
+  // TODO: get image to load correctly
   unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
 
   if (data) {
