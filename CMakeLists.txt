@@ -22,8 +22,9 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory("thirdparty/glfw")
 add_subdirectory("thirdparty/glad")
 
+add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 
-file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
 # Add source to this project's executable.
 add_executable (CMakeProject1) # "CMakeProject1.cpp" "CMakeProject1.h" "shaders/shaders.cpp")
@@ -40,12 +41,12 @@ if(PRODUCTION_BUILD)
 
 else()
 	# This is useful to get an ASSETS_PATH in your IDE during development
-	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_PROJECT_NAME}/resources/")
 	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0) 
 
 endif()
 
-target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES} )
+target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES})
 
 if(MSVC) # If using the VS compiler...
 
@@ -58,6 +59,8 @@ if(MSVC) # If using the VS compiler...
 
 endif()
 
-target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/")
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glfw glad)
+INCLUDE_DIRECTORIES("${CMAKE_PROJECT_NAME}/thirdparty/" "${CMAKE_PROJECT_NAME}/resources/")
+
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glfw glad STB_IMAGE)
