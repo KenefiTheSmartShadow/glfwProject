@@ -25,3 +25,5 @@ unsigned int indices[] = {
     0, 1, 3, // first Triangle
     1, 2, 3  // second Triangle
 };
+
+float mixValue = 0.2f;

@@ -54,20 +54,21 @@ int main()
   // --------
   // TEXTURES
   // --------
-  unsigned int texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  unsigned int texture1, texture2;
+  glGenTextures(1, &texture1);
+  glBindTexture(GL_TEXTURE_2D, texture1);
   // texture wrapping
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   // texture filtering
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   
   // load texture
   int width, height, nrChannels;
+  stbi_set_flip_vertically_on_load(true);
   
-  unsigned char *data = stbi_load("resources/images/wall.jpg", &width, &height, &nrChannels, 0);
+  unsigned char *data = stbi_load("resources/images/container.jpg", &width, &height, &nrChannels, 0);
 
   if (data) {
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
@@ -78,6 +79,29 @@ int main()
   }
 
   stbi_image_free(data);
+
+  glGenTextures(1, &texture2);
+  glBindTexture(GL_TEXTURE_2D, texture2);
+  // texture wrapping
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  // texture filtering
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // load texture
+  data = stbi_load("resources/images/awesomeface.png", &width, &height, &nrChannels, 0);
+
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    cerr << "ERROR: FAILED TO LOAD TEXTURE\n";
+  }
+
+  shader.use();
+  glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
+  shader.setInt("texture2", 1);
 
   // -------
   // PROGRAM
@@ -91,7 +115,13 @@ int main()
     glClearColor(.1f, .1f, .1f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+
+    shader.setFloat("mixAmmount", mixValue);
 
     shader.use();
     glBindVertexArray(VAO);
@@ -118,7 +148,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 void process_input(GLFWwindow *window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
+  }
+  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    mixValue += .01;
+    if (mixValue >= 1.f)
+      mixValue = 1.f;
+  }
+  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    mixValue -= .01;
+    if (mixValue <= 0.f)
+      mixValue = 0.f;
   }
 }

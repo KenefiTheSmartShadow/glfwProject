@@ -21,6 +21,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory("thirdparty/glfw")
 add_subdirectory("thirdparty/glad")
+add_subdirectory("thirdparty/glm")
 
 add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 
@@ -65,4 +66,4 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 
 INCLUDE_DIRECTORIES("${CMAKE_PROJECT_NAME}/thirdparty/" "${CMAKE_PROJECT_NAME}/resources/")
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glfw glad STB_IMAGE)
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glfw glad glm STB_IMAGE)
