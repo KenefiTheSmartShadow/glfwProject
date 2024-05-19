@@ -21,7 +21,7 @@ int main()
 
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  Shaders shader(vertexShader, fragmentShader);
+  Shaders shader("resources/shaders/vertex.vert", "resources/shaders/fragment.frag");
 
   // -----------
   // VERTEX DATA
@@ -66,8 +66,8 @@ int main()
   
   // load texture
   int width, height, nrChannels;
-  // TODO: get image to load correctly
-  unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+  
+  unsigned char *data = stbi_load("resources/images/wall.jpg", &width, &height, &nrChannels, 0);
 
   if (data) {
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,

@@ -9,17 +9,46 @@ using namespace std;
 class Shaders {
 public:
   unsigned int ID;
-  Shaders(const char *vertexCode, const char *fragmentCode) {
+  Shaders(const char *vertexPath, const char *fragmentPath) {
+    // open from file
+    string vertexCode, fragmentCode;
+    ifstream vShaderFile, fShaderFile;
+
+    vShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+    fShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+
+    try
+    {
+      vShaderFile.open(vertexPath);
+      fShaderFile.open(fragmentPath);
+      stringstream vShaderStream, fShaderStream;
+      
+      vShaderStream << vShaderFile.rdbuf();
+      fShaderStream << fShaderFile.rdbuf();
+
+      vShaderFile.close();
+      fShaderFile.close();
+
+      vertexCode = vShaderStream.str();
+      fragmentCode = fShaderStream.str();
+    } catch(ifstream::failure& e)
+    {
+      cerr << "ERROR: Failed to load shader file" << e.what() << "\n";
+    }
+
     // compile shaders
+    const char *vShaderCode = vertexCode.c_str();
+    const char *fShaderCode = fragmentCode.c_str();
+
     unsigned int vertex, fragment;
 
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vertexCode, NULL);
+    glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
     checkCompileErrors(vertex, "VERTEX");
 
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fragmentCode, NULL);
+    glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
 

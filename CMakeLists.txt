@@ -24,6 +24,8 @@ add_subdirectory("thirdparty/glad")
 
 add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources/" DESTINATION "${CMAKE_BINARY_DIR}/resources/")
+
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 
 # Add source to this project's executable.
