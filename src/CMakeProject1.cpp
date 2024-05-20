@@ -1,25 +1,24 @@
 ﻿#include "CMakeProject1.h"
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void process_input(GLFWwindow *window);
-
 int main() 
 {
   glfwInit();
 
+  glfwWindowHint(GLFW_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_VERSION_MINOR, 3);
+
   GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "title", NULL, NULL);
   glfwMakeContextCurrent(window);
 
-  glfwWindowHint(GLFW_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_VERSION_MINOR, 3);
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetScrollCallback(window, scroll_callback);
 
 
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) 
   {
     cout << "failed to init glad\n";
   }
-
-  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
   glEnable(GL_DEPTH_TEST);
 
@@ -112,12 +111,15 @@ int main()
   // PROGRAM
   // -------
   //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-  shader.setMat4("projection", projection);
 
-
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   //glfwSwapInterval(1);
   while (!glfwWindowShouldClose(window)) {
+
+    float currentFrame = static_cast<float>(glfwGetTime());
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
     // window input
     process_input(window);
     
@@ -136,17 +138,11 @@ int main()
 
 
     // camera
-    glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-    float radius = 10.0f;
-    float camX = static_cast<float>(sin(glfwGetTime()) * radius);
-    float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
-    view = glm::lookAt(
-      glm::vec3(camX, 0.0f, camZ), 
-      glm::vec3(0.0f, 0.0f, 0.0f),
-      glm::vec3(0.0f, 1.0f, 0.0f)
-    );
-    shader.setMat4("view", view);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+    shader.setMat4("projection", projection);
 
+    glm::mat4 view = camera.GetViewMatrix();
+    shader.setMat4("view", view);
 
     // boxes
     glBindVertexArray(VAO);
@@ -174,14 +170,50 @@ int main()
   glfwTerminate();
 }
 
+void process_input(GLFWwindow *window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, true);
+  }
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    camera.ProcessKeyboard(FORWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    camera.ProcessKeyboard(BACKWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    camera.ProcessKeyboard(LEFT, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    camera.ProcessKeyboard(RIGHT, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    camera.ProcessKeyboard(DOWN, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    camera.ProcessKeyboard(UP, deltaTime);
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
   glad_glViewport(0, 0, width, height);
 }
 
-void process_input(GLFWwindow *window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-    glfwSetWindowShouldClose(window, true);
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+  float xpos = static_cast<float>(xposIn);
+  float ypos = static_cast<float>(yposIn);
+
+  if (firstMouse) {
+    lastX = xpos;
+    lastY = ypos;
+    firstMouse = false;
   }
+
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+  
+  lastX = xpos;
+  lastY = ypos;
+
+  camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }

@@ -19,6 +19,20 @@ using namespace std;
 
 const int WIDTH = 800, HEIGHT = 600;
 
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void mouse_callback(GLFWwindow *window, double xposIN, double yposIN);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void process_input(GLFWwindow *window);
+
+Camera camera(glm::vec3(0.f, 0.f, 3.f));
+float lastX = WIDTH  / 2;
+float lastY = HEIGHT / 2;
+bool firstMouse = true;
+
+// time
+float deltaTime = 0.f;
+float lastFrame = 0.f;
+
 float vertices[] = {
      // positions        // texture coords
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 
