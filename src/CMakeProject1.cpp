@@ -21,15 +21,17 @@ int main()
 
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+  glEnable(GL_DEPTH_TEST);
+
   Shaders shader("resources/shaders/vertex.vert", "resources/shaders/fragment.frag");
 
   // -----------
   // VERTEX DATA
   // -----------
-  unsigned int VBO, VAO, EBO;
+  unsigned int VBO, VAO; // EBO;
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
+  //glGenBuffers(1, &EBO);
 
   glBindVertexArray(VAO);
   
@@ -37,7 +39,7 @@ int main()
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
   // position attribute
@@ -110,10 +112,11 @@ int main()
   // PROGRAM
   // -------
   //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glfwSwapInterval(1);
+  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+  shader.setMat4("projection", projection);
 
-  glEnable(GL_DEPTH_TEST);
 
+  //glfwSwapInterval(1);
   while (!glfwWindowShouldClose(window)) {
     // window input
     process_input(window);
@@ -131,16 +134,21 @@ int main()
 
     shader.use();
 
-    // create transformations
-    glm::mat4 projection = glm::mat4(1.0f);
-    glm::mat4 view       = glm::mat4(1.0f);
 
-    projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-    view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-    shader.setMat4("projection", projection);
+    // camera
+    glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    float radius = 10.0f;
+    float camX = static_cast<float>(sin(glfwGetTime()) * radius);
+    float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
+    view = glm::lookAt(
+      glm::vec3(camX, 0.0f, camZ), 
+      glm::vec3(0.0f, 0.0f, 0.0f),
+      glm::vec3(0.0f, 1.0f, 0.0f)
+    );
     shader.setMat4("view", view);
 
+
+    // boxes
     glBindVertexArray(VAO);
     for (unsigned int i = 0; i < 10; i++) {
       glm::mat4 model = glm::mat4(1.f);
@@ -159,7 +167,7 @@ int main()
 
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
-  glDeleteBuffers(1, &EBO);
+  //glDeleteBuffers(1, &EBO);
 
 
   glfwDestroyWindow(window);
