@@ -13,7 +13,7 @@ int main()
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
-
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) 
   {
@@ -22,146 +22,94 @@ int main()
 
   glEnable(GL_DEPTH_TEST);
 
-  Shaders shader("resources/shaders/vertex.vert", "resources/shaders/fragment.frag");
+  Shaders lightingShader("resources/shaders/lightingVert.vert",
+                 "resources/shaders/lightingFrag.frag");
+  Shaders lightCubeShader("resources/shaders/cubeVert.vert",
+                 "resources/shaders/cubeFrag.frag");
 
   // -----------
   // VERTEX DATA
   // -----------
-  unsigned int VBO, VAO; // EBO;
-  glGenVertexArrays(1, &VAO);
+  unsigned int VBO, cubeVAO;
+  glGenVertexArrays(1, &cubeVAO);
   glGenBuffers(1, &VBO);
-  //glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-  
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  glBindVertexArray(cubeVAO);
 
   // position attribute
-  glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof (float), (void*) 0);
-  glEnableVertexAttribArray (0);
-  //// color attribute
-  //glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof (float), (void*) (3 * sizeof (float)));
-  //glEnableVertexAttribArray (1);
-  // texture coords attribute
-  glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof (float), (void*) (3 * sizeof(float)));
-  glEnableVertexAttribArray (1);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
 
-  //glBindVertexArray(0); 
+  unsigned int lightCubeVAO;
+  glGenVertexArrays(1, &lightCubeVAO);
+  glBindVertexArray(lightCubeVAO);
 
-  // --------
-  // TEXTURES
-  // --------
-  unsigned int texture1, texture2;
-  glGenTextures(1, &texture1);
-  glBindTexture(GL_TEXTURE_2D, texture1);
-  // texture wrapping
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  // texture filtering
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  
-  // load texture
-  int width, height, nrChannels;
-  stbi_set_flip_vertically_on_load(true);
-  
-  unsigned char *data = stbi_load("resources/images/container.jpg", &width, &height, &nrChannels, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-  if (data) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                   GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    cerr << "ERROR: FAILED TO LOAD TEXTURE\n";
-  }
-
-  stbi_image_free(data);
-
-  glGenTextures(1, &texture2);
-  glBindTexture(GL_TEXTURE_2D, texture2);
-  // texture wrapping
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  // texture filtering
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  // load texture
-  data = stbi_load("resources/images/awesomeface.png", &width, &height, &nrChannels, 0);
-
-  if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    cerr << "ERROR: FAILED TO LOAD TEXTURE\n";
-  }
-
-  stbi_image_free(data);
-
-  shader.use();
-  shader.setInt("texture1", 0);
-  shader.setInt("texture2", 1);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
 
   // -------
   // PROGRAM
   // -------
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  //glfwSwapInterval(1);
   while (!glfwWindowShouldClose(window)) {
-
+    // per-frame time logic
+    // --------------------
     float currentFrame = static_cast<float>(glfwGetTime());
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    // window input
+    // input
+    // -----
     process_input(window);
-    
+
     // render
-    glClearColor(.1f, .1f, .1f, 1.f);
+    // ------
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // textures
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    // be sure to activate shader when setting uniforms/drawing objects
+    lightingShader.use();
+    lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-
-    shader.use();
-
-
-    // camera
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-    shader.setMat4("projection", projection);
-
+    // view/projection transformations
+    glm::mat4 projection =
+        glm::perspective(glm::radians(camera.Zoom),
+                         (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
-    shader.setMat4("view", view);
+    lightingShader.setMat4("projection", projection);
+    lightingShader.setMat4("view", view);
 
-    // boxes
-    glBindVertexArray(VAO);
-    for (unsigned int i = 0; i < 10; i++) {
-      glm::mat4 model = glm::mat4(1.f);
-      model = glm::translate(model, cubePositions[i]);
-      float angle = 20.f * i;
-      model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(1.f, .3f, .5f));
-      shader.setMat4("model", model);
+    // world transformation
+    glm::mat4 model = glm::mat4(1.0f);
+    lightingShader.setMat4("model", model);
 
-      glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // render the cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // also draw the lamp object
+    lightCubeShader.use();
+    lightCubeShader.setMat4("projection", projection);
+    lightCubeShader.setMat4("view", view);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+    lightCubeShader.setMat4("model", model);
+
+    glBindVertexArray(lightCubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
-  glDeleteVertexArrays(1, &VAO);
+  glDeleteVertexArrays(1, &cubeVAO);
+  glDeleteVertexArrays(1, &lightCubeVAO);
   glDeleteBuffers(1, &VBO);
   //glDeleteBuffers(1, &EBO);
 
