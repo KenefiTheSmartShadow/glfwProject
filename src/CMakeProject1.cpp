@@ -12,11 +12,14 @@ float deltaTime = 0.f;
 float lastFrame = 0.f;
 
 // lighting
+unsigned int lightCubeVAO;
+float ambientStrength = .1;
 glm::vec3 lightPos(1.2f, 1.f, 2.f);
 glm::vec3 lightColor(1.f, 1.f, 1.f);
 glm::vec3 toyColor(1.f, .5f, .31f);
 glm::vec3 result = lightColor * toyColor;
 
+// cube
 float vertices[] = {
     -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.5f, -0.5f,
     0.0f,  0.0f,  -1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f,
@@ -47,13 +50,18 @@ float vertices[] = {
     0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,
     0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f};
+unsigned int VBO, cubeVAO;
 
+
+// cube locations
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),    glm::vec3(2.0f, 5.0f, -15.0f),
     glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
     glm::vec3(2.4f, -0.4f, -3.5f),  glm::vec3(-1.7f, 3.0f, -7.5f),
     glm::vec3(1.3f, -2.0f, -2.5f),  glm::vec3(1.5f, 2.0f, -2.5f),
     glm::vec3(1.5f, 0.2f, -1.5f),   glm::vec3(-1.3f, 1.0f, -1.5f)};
+
+
 
 int main() 
 {
@@ -87,14 +95,18 @@ int main()
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init();
-
+  // docking
+  ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   glEnable(GL_DEPTH_TEST);
 
+  // -------
+  // SHADERS
+  // -------
   Shaders cubeShader("resources/shaders/lightingVert.vert",
-                 "resources/shaders/lightingFrag.frag");
+                     "resources/shaders/lightingFrag.frag");
   Shaders lightSource("resources/shaders/cubeVert.vert",
-                 "resources/shaders/cubeFrag.frag");
+                      "resources/shaders/cubeFrag.frag");
 
   // -----------
   // VERTEX DATA
@@ -102,7 +114,6 @@ int main()
   
   // cube VAO
   // --------
-  unsigned int VBO, cubeVAO;
   glGenVertexArrays(1, &cubeVAO);
   glGenBuffers(1, &VBO);
 
@@ -120,7 +131,6 @@ int main()
 
   // light's VAO
   // -----------
-  unsigned int lightCubeVAO;
   glGenVertexArrays(1, &lightCubeVAO);
   glBindVertexArray(lightCubeVAO);
 
@@ -149,58 +159,12 @@ int main()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // render
-    // ------
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // be sure to activate shader when setting uniforms/drawing objects
-    cubeShader.use();
-    cubeShader.setVec3("objectColor", toyColor);
-    cubeShader.setVec3("lightColor", lightColor);
-    cubeShader.setVec3("lightPos", lightPos);
-
-    // view/projection transformations
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.0001f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    cubeShader.setMat4("projection", projection);
-    cubeShader.setMat4("view", view);
-
-    // cube transformation
-    glm::mat4 model = glm::mat4(1.0f);
-    for(unsigned int i = 0; i < 10; i++)
-    {
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, cubePositions[i]);
-      
-      cubeShader.setMat4("model", model);
-      // render the cube
-      glBindVertexArray(cubeVAO);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-
-
-    // also draw the lamp object
-    lightSource.use();
-    lightSource.setVec3("lightCol", lightColor);
-    lightSource.setMat4("projection", projection);
-    lightSource.setMat4("view", view);
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-    lightSource.setMat4("model", model);
-
-    glBindVertexArray(lightCubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // render scene
+    // ------------
+    render(cubeShader, lightSource);
 
     // render imgui window
-    ImGui::Begin("Debug");
-    
     runGUI();
-    
-    ImGui::End();
-
-    ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
@@ -292,6 +256,10 @@ void runGUI()
   float lightUpdateCol[3] = {lightColor.r, lightColor.g, lightColor.b};
   float toyUpdateCol[3] = {toyColor.r, toyColor.g, toyColor.b};
   
+  ImGui::Begin("Debug");
+
+  // window docking
+
   // light position
   ImGui::DragFloat("light XPos", &lightPos.x, .02, -50.f, 50.f);
   ImGui::DragFloat("light YPos", &lightPos.y, .02, -50.f, 50.f);
@@ -303,5 +271,61 @@ void runGUI()
 
   ImGui::ColorEdit3("object Col", toyUpdateCol);
   toyColor = glm::vec3(toyUpdateCol[0], toyUpdateCol[1], toyUpdateCol[2]);
+  ImGui::Spacing();
 
+  ImGui::DragFloat("Ambient Strength", &ambientStrength, .01f, 0.f, 1.f);
+
+  ImGui::End();
+
+  //ImGui::Begin("Second");
+  //ImGui::Spacing();
+
+  //ImGui::End();
+
+  ImGui::Render();
+}
+
+void render(Shaders cubeShader, Shaders lightSource)
+{
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // be sure to activate shader when setting uniforms/drawing objects
+  cubeShader.use();
+  cubeShader.setVec3("objectColor", toyColor);
+  cubeShader.setVec3("lightColor", lightColor);
+  cubeShader.setVec3("lightPos", lightPos);
+  cubeShader.setFloat("ambientStrength", ambientStrength);
+
+  // view/projection transformations
+  glm::mat4 projection = glm::perspective(
+      glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.0001f, 100.0f);
+  glm::mat4 view = camera.GetViewMatrix();
+  cubeShader.setMat4("projection", projection);
+  cubeShader.setMat4("view", view);
+
+  // cube transformation
+  glm::mat4 model = glm::mat4(1.0f);
+  for (unsigned int i = 0; i < 10; i++) {
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, cubePositions[i]);
+
+    cubeShader.setMat4("model", model);
+    // render the cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+
+  // also draw the lamp object
+  lightSource.use();
+  lightSource.setVec3("lightCol", lightColor);
+  lightSource.setMat4("projection", projection);
+  lightSource.setMat4("view", view);
+  model = glm::mat4(1.0f);
+  model = glm::translate(model, lightPos);
+  model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+  lightSource.setMat4("model", model);
+
+  glBindVertexArray(lightCubeVAO);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
 }

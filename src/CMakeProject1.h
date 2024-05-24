@@ -31,5 +31,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void process_input(GLFWwindow *window);
 
 void runGUI();
+void render(Shaders cubeShader, Shaders lightSource);
 
-// https://learnopengl.com/Lighting/Basic-Lighting
+// https://learnopengl.com/Lighting/Materials
