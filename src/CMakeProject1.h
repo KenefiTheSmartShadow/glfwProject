@@ -45,6 +45,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void process_input(GLFWwindow *window);
 
+unsigned int loadTexture(const char* path);
+
 void runGUI();
 
-// https://learnopengl.com/Lighting/Materials
+// https://learnopengl.com/Lighting/Lighting-maps
