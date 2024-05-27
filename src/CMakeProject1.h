@@ -24,21 +24,6 @@ using namespace std;
 
 const int WIDTH = 1800, HEIGHT = 1200;
 
-struct Material
-{
-  glm::vec3 ambient;
-  glm::vec3 diffuse;
-  glm::vec3 specular;
-  float shininess;
-};
-
-struct Light {
-  glm::vec3 position;
-  glm::vec3 ambient;
-  glm::vec3 diffuse;
-  glm::vec3 specular;
-};
-
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xposIN, double yposIN);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
@@ -49,4 +34,4 @@ unsigned int loadTexture(const char* path);
 
 void runGUI();
 
-// https://learnopengl.com/Lighting/Lighting-maps
+// https://learnopengl.com/Lighting/Light-casters
